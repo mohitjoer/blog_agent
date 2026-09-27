@@ -48,10 +48,24 @@ export function loadConfig(overrides?: Partial<Config>): Config {
   let repoJson: Record<string, any> = {};
   const repoRaw = process.env.TARGET_REPO_CONFIG || process.env.TARGET_REPO;
   if (repoRaw && repoRaw.trim()) {
+    let cleaned = repoRaw.trim();
+    // Strip surrounding quotes if pasted with outer single or double quotes (common in GitHub Secrets / .env)
+    while (
+      (cleaned.startsWith("'") && cleaned.endsWith("'")) ||
+      (cleaned.startsWith('"') && cleaned.endsWith('"'))
+    ) {
+      cleaned = cleaned.slice(1, -1).trim();
+    }
+
     try {
-      repoJson = JSON.parse(repoRaw.trim());
+      repoJson = JSON.parse(cleaned);
     } catch (e) {
-      console.warn("⚠️ Failed to parse TARGET_REPO_CONFIG JSON variable:", e);
+      try {
+        // Handle escaped quotes e.g. \"owner\": \"...\"
+        repoJson = JSON.parse(cleaned.replace(/\\"/g, '"').replace(/\\'/g, "'"));
+      } catch {
+        console.warn("⚠️ Failed to parse TARGET_REPO_CONFIG JSON variable:", e);
+      }
     }
   }
 

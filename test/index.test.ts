@@ -43,6 +43,20 @@ async function runTests() {
   if (prevPat) process.env.TARGET_REPO_PAT = prevPat;
   console.log("   ✅ TARGET_REPO_CONFIG JSON parsing passed.\n");
 
+  // Test 1c: Single-quoted JSON string (common when pasting in GitHub Secrets or .env)
+  console.log("1c. Testing single-quoted TARGET_REPO_CONFIG parsing...");
+  process.env.TARGET_REPO_CONFIG = `'{"owner":"quote-owner","name":"quote-repo","pat":"ghp_quote_pat"}'`;
+  delete process.env.TARGET_REPO_PAT;
+  delete process.env.TARGET_REPO_OWNER;
+  delete process.env.TARGET_REPO_NAME;
+  const quoteLoadedConfig = loadConfig({ DRY_RUN: true });
+  assert.strictEqual(quoteLoadedConfig.TARGET_REPO_OWNER, "quote-owner");
+  assert.strictEqual(quoteLoadedConfig.TARGET_REPO_NAME, "quote-repo");
+  assert.strictEqual(quoteLoadedConfig.TARGET_REPO_PAT, "ghp_quote_pat");
+  if (prevJsonEnv) process.env.TARGET_REPO_CONFIG = prevJsonEnv; else delete process.env.TARGET_REPO_CONFIG;
+  if (prevPat) process.env.TARGET_REPO_PAT = prevPat;
+  console.log("   ✅ Single-quoted TARGET_REPO_CONFIG parsing passed.\n");
+
   // Test 2: Article generation
   console.log("2. Testing article generator...");
   const article = await generateBlogPost(config, "TypeScript Clean Architecture");
