@@ -62,6 +62,7 @@ jobs:
           PUBLISH_METHOD: ${{ vars.PUBLISH_METHOD || 'playwright' }}
           DEVTO_EMAIL: ${{ secrets.DEVTO_EMAIL }}
           DEVTO_PASSWORD: ${{ secrets.DEVTO_PASSWORD }}
+          DEVTO_USERNAME: ${{ vars.DEVTO_USERNAME }}
           DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
           DEVTO_PUBLISH_AS_DRAFT: ${{ inputs.publish_as_draft || vars.DEVTO_PUBLISH_AS_DRAFT || 'false' }}
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
