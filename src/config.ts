@@ -10,15 +10,15 @@ const envSchema = z.object({
 
   // Target Next.js Repository settings
   TARGET_REPO_PAT: z.string().min(1, "TARGET_REPO_PAT (GitHub Personal Access Token) is required"),
-  TARGET_REPO_OWNER: z.string().min(1, "TARGET_REPO_OWNER is required (e.g. 'mohitjoer')"),
-  TARGET_REPO_NAME: z.string().min(1, "TARGET_REPO_NAME is required (e.g. 'mohitjoe')"),
+  TARGET_REPO_OWNER: z.string().min(1, "TARGET_REPO_OWNER is required (e.g. 'your-github-username')"),
+  TARGET_REPO_NAME: z.string().min(1, "TARGET_REPO_NAME is required (e.g. 'your-website-repo')"),
   TARGET_BLOG_DIR: z.string().default("content/posts"),
   TARGET_FILE_EXT: z.enum(["mdx", "md"]).default("mdx"),
   TARGET_BASE_BRANCH: z.string().default("main"),
   TARGET_BLOG_BRANCH: z.string().default("blog_branch"),
 
   // Website Canonical URL settings
-  TARGET_SITE_URL: z.string().url("TARGET_SITE_URL must be a valid URL (e.g. 'https://mohitjoe.com')"),
+  TARGET_SITE_URL: z.string().url("TARGET_SITE_URL must be a valid URL (e.g. 'https://your-domain.com')"),
   BLOG_PATH_PREFIX: z.string().default("/blog"),
 
   // DEV.to Publishing Settings
@@ -29,6 +29,10 @@ const envSchema = z.object({
   DEVTO_SESSION_PATH: z.string().default(".auth/devto-session.json"),
   PLAYWRIGHT_HEADLESS: z.preprocess((val) => val === "true" || val === true, z.boolean()).default(true),
   DEVTO_PUBLISH_AS_DRAFT: z.preprocess((val) => val === "true" || val === true, z.boolean()).default(false),
+
+  // Content generation settings
+  BLOG_AUTHOR: z.string().default("Blog Agent"),
+  PROMPT_CONTEXT: z.string().optional().default(""),
 
   // Operational settings
   PR_ONLY: z.preprocess((val) => val === "true" || val === true, z.boolean()).default(false),
@@ -60,6 +64,8 @@ export function loadConfig(overrides?: Partial<Config>): Config {
     DEVTO_SESSION_PATH: process.env.DEVTO_SESSION_PATH || ".auth/devto-session.json",
     PLAYWRIGHT_HEADLESS: process.env.PLAYWRIGHT_HEADLESS ?? "true",
     DEVTO_PUBLISH_AS_DRAFT: process.env.DEVTO_PUBLISH_AS_DRAFT ?? "false",
+    BLOG_AUTHOR: process.env.BLOG_AUTHOR || "Blog Agent",
+    PROMPT_CONTEXT: process.env.PROMPT_CONTEXT ?? "",
     PR_ONLY: isPrOnlyArg || process.env.PR_ONLY === "true",
     DRY_RUN: isDryRunArg || process.env.DRY_RUN === "true",
     ...overrides,
@@ -73,8 +79,8 @@ export function loadConfig(overrides?: Partial<Config>): Config {
         GEMINI_API_KEY: rawEnv.GEMINI_API_KEY || "mock-gemini-key",
         GEMINI_MODEL: rawEnv.GEMINI_MODEL,
         TARGET_REPO_PAT: rawEnv.TARGET_REPO_PAT || "mock-gh-pat",
-        TARGET_REPO_OWNER: rawEnv.TARGET_REPO_OWNER || "mohitjoer",
-        TARGET_REPO_NAME: rawEnv.TARGET_REPO_NAME || "website",
+        TARGET_REPO_OWNER: rawEnv.TARGET_REPO_OWNER || "example-user",
+        TARGET_REPO_NAME: rawEnv.TARGET_REPO_NAME || "example-website",
         TARGET_BLOG_DIR: rawEnv.TARGET_BLOG_DIR,
         TARGET_FILE_EXT: rawEnv.TARGET_FILE_EXT,
         TARGET_BASE_BRANCH: rawEnv.TARGET_BASE_BRANCH,
@@ -88,6 +94,8 @@ export function loadConfig(overrides?: Partial<Config>): Config {
         DEVTO_SESSION_PATH: rawEnv.DEVTO_SESSION_PATH,
         PLAYWRIGHT_HEADLESS: rawEnv.PLAYWRIGHT_HEADLESS === "true" || rawEnv.PLAYWRIGHT_HEADLESS === true,
         DEVTO_PUBLISH_AS_DRAFT: rawEnv.DEVTO_PUBLISH_AS_DRAFT === "true" || rawEnv.DEVTO_PUBLISH_AS_DRAFT === true,
+        BLOG_AUTHOR: rawEnv.BLOG_AUTHOR,
+        PROMPT_CONTEXT: rawEnv.PROMPT_CONTEXT,
         PR_ONLY: Boolean(rawEnv.PR_ONLY),
         DRY_RUN: true,
       };

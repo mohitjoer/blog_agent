@@ -10,7 +10,7 @@ async function runTests() {
 
   // Test 1: Config loading with dry-run fallback
   console.log("1. Testing config loading with DRY_RUN mode...");
-  const config = loadConfig({ DRY_RUN: true });
+  const config = loadConfig({ DRY_RUN: true, GEMINI_API_KEY: "mock-gemini-key" });
   assert.strictEqual(config.DRY_RUN, true, "Config should enable DRY_RUN");
   assert.ok(config.TARGET_SITE_URL, "TARGET_SITE_URL should have a value");
   console.log("   ✅ Config loaded successfully.\n");

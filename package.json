@@ -10,7 +10,7 @@
     "dry-run": "tsx src/index.ts --dry-run",
     "devto:login": "tsx src/login-helper.ts",
     "build": "tsc",
-    "sync:sitemap": "tsx src/sync-sitemap.ts",
+    "sitemap:check": "tsx src/sitemap.ts",
     "test": "tsx test/index.test.ts"
   },
   "keywords": [

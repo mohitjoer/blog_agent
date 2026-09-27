@@ -137,7 +137,7 @@ PROJECT CONTEXT:
     \`\`\`
   - Pluggable audio pipelines for WebSockets, WebRTC, Deepgram, Whisper, ElevenLabs, and Cartesia.
   - Zero external API keys needed for local testing and deterministic routing.
-
+${config.PROMPT_CONTEXT ? `\nADDITIONAL PROJECT CONTEXT:\n${config.PROMPT_CONTEXT}\n` : ""}
 ${
   topicIdea
     ? `Target Topic/Prompt Provided: "${topicIdea}"`
@@ -185,8 +185,35 @@ Return your response strictly as a JSON object matching this schema:
   "tags": string[],
   "content": string
 }`;
+  let result;
+  const maxRetries = 5;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      result = await model.generateContent(prompt);
+      break;
+    } catch (err: any) {
+      if (
+        attempt < maxRetries &&
+        (err?.status === 503 ||
+          err?.status === 429 ||
+          err?.message?.includes("503") ||
+          err?.message?.includes("429") ||
+          err?.message?.includes("high demand") ||
+          err?.message?.includes("overloaded"))
+      ) {
+        const delaySec = attempt * 3;
+        console.warn(`⚠️ Gemini API temporary spike (${err?.status || "503"}), retrying in ${delaySec}s (attempt ${attempt}/${maxRetries})...`);
+        await new Promise((r) => setTimeout(r, delaySec * 1000));
+      } else {
+        throw err;
+      }
+    }
+  }
 
-  const result = await model.generateContent(prompt);
+  if (!result) {
+    throw new Error("Failed to receive response from Gemini model.");
+  }
+
   let rawText = result.response.text().trim();
   if (rawText.startsWith("```json")) {
     rawText = rawText.replace(/^```json\s*/, "").replace(/\s*```$/, "");
@@ -218,7 +245,7 @@ description: "${parsed.description.replace(/"/g, '\\"')}"
 date: "${dateStr}"
 tags: [${cleanTags.map((t) => `"${t}"`).join(", ")}]
 canonicalUrl: "${canonicalUrl}"
-author: "Mohit / Felona Voice Core Team"
+author: "${config.BLOG_AUTHOR.replace(/"/g, '\\"')}"
 ---
 
 `;

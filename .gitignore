@@ -1,9 +1,29 @@
 node_modules/
 dist/
+
+# Environment files (NEVER commit these — contain API keys and passwords)
 .env
 .env.local
+.env.*.local
+
+# Playwright session state (contains auth cookies)
+.auth/
+
+# Runtime data (generated from sitemap, never committed)
+src/topics.json
+
+# Agent memory (personal per-developer)
 agents/
 AGENTS.md
 CLAUDE.md
 GEMINI.md
-.auth/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

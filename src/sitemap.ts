@@ -1,3 +1,5 @@
+import { fileURLToPath } from "url";
+
 export interface SitemapBlogEntry {
   loc: string;
   slug: string;
@@ -14,13 +16,13 @@ export function slugToTitle(slug: string): string {
 }
 
 export async function fetchBlogPostsFromSitemap(
-  sitemapUrl: string = "https://felona-voice.mohitjoe.tech/sitemap.xml",
-  targetSiteUrl: string = "https://felona-voice.mohitjoe.tech"
+  sitemapUrl: string,
+  targetSiteUrl: string
 ): Promise<SitemapBlogEntry[]> {
   try {
     const res = await fetch(sitemapUrl, {
       headers: {
-        "User-Agent": "FelonaBlogAgent/1.0 (+https://felona-voice.mohitjoe.tech)",
+        "User-Agent": "BlogAgent/1.0",
       },
     });
 
@@ -68,3 +70,19 @@ export async function fetchBlogPostsFromSitemap(
     return [];
   }
 }
+
+// If run directly via CLI (e.g. tsx src/sitemap.ts)
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const targetSiteUrl = process.env.TARGET_SITE_URL || "https://felona-voice.mohitjoe.tech";
+  const sitemapUrl = `${targetSiteUrl.replace(/\/$/, "")}/sitemap.xml`;
+  console.log(`📡 Inspecting live sitemap: ${sitemapUrl}`);
+  fetchBlogPostsFromSitemap(sitemapUrl, targetSiteUrl)
+    .then((entries) => {
+      console.log(`✅ Found ${entries.length} published blog posts:`);
+      entries.forEach((e, idx) => {
+        console.log(`  ${idx + 1}. [${e.slug}] ${e.title} -> ${e.canonicalUrl}`);
+      });
+    })
+    .catch(console.error);
+}
+

@@ -1,50 +1,10 @@
 import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
 import { loadConfig } from "./config.js";
 import { generateBlogPost } from "./generator.js";
 import { createNextJsBlogPR } from "./github.js";
 import { publishToDevTo } from "./devto.js";
 import { publishToDevToWithPlaywright } from "./devto-playwright.js";
-import { syncHistoryFromSitemap } from "./sync-sitemap.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const TOPICS_FILE_PATH = path.join(__dirname, "topics.json");
-
-interface TopicItem {
-  id: string;
-  title: string;
-  prompt: string;
-  status: "queued" | "published";
-}
-
-interface PublishedHistoryItem {
-  id: string;
-  title: string;
-  slug: string;
-  canonicalUrl: string;
-  prUrl: string;
-  devToUrl: string;
-  publishedAt: string;
-}
-
-interface TopicsData {
-  topics: TopicItem[];
-  history: PublishedHistoryItem[];
-}
-
-async function loadTopicsData(): Promise<TopicsData> {
-  try {
-    const raw = await fs.readFile(TOPICS_FILE_PATH, "utf-8");
-    return JSON.parse(raw);
-  } catch {
-    return { topics: [], history: [] };
-  }
-}
-
-async function saveTopicsData(data: TopicsData): Promise<void> {
-  await fs.writeFile(TOPICS_FILE_PATH, JSON.stringify(data, null, 2), "utf-8");
-}
+import { fetchBlogPostsFromSitemap } from "./sitemap.js";
 
 function parseCliArgs(): { topicOverride?: string } {
   const args = process.argv.slice(2);
@@ -66,19 +26,20 @@ async function main() {
   const config = loadConfig();
   const { topicOverride } = parseCliArgs();
 
-  // Sync published history from live website sitemap
+  // Dynamically inspect published articles from live website sitemap (Stateless — no repo data file)
+  let existingArticles: { title: string; slug: string }[] = [];
   try {
     const sitemapUrl = `${config.TARGET_SITE_URL.replace(/\/$/, "")}/sitemap.xml`;
-    await syncHistoryFromSitemap(sitemapUrl, config.TARGET_SITE_URL);
+    console.log(`📡 Fetching live blog post history from sitemap: ${sitemapUrl}...`);
+    const sitemapEntries = await fetchBlogPostsFromSitemap(sitemapUrl, config.TARGET_SITE_URL);
+    existingArticles = sitemapEntries.map((e) => ({
+      title: e.title,
+      slug: e.slug,
+    }));
+    console.log(`✅ Discovered ${existingArticles.length} published articles from live website sitemap.`);
   } catch (err) {
-    console.warn("⚠️ Could not sync history from sitemap at startup:", err);
+    console.warn("⚠️ Could not fetch existing articles from sitemap:", err);
   }
-
-  const topicsData = await loadTopicsData();
-  const existingArticles = topicsData.history.map((h) => ({
-    title: h.title,
-    slug: h.slug,
-  }));
 
   let topicPrompt: string | undefined = topicOverride;
 
@@ -119,24 +80,6 @@ async function main() {
       devToResult = await publishToDevTo(config, article);
     }
   }
-
-  // Prepend newly published article to history
-  topicsData.history.unshift({
-    id: article.slug,
-    title: article.title,
-    slug: article.slug,
-    canonicalUrl: article.canonicalUrl,
-    prUrl: prResult.pullRequestUrl,
-    devToUrl: devToResult.articleUrl,
-    publishedAt: new Date().toISOString(),
-  });
-
-  // Keep history to last 50 entries
-  if (topicsData.history.length > 50) {
-    topicsData.history = topicsData.history.slice(0, 50);
-  }
-
-  await saveTopicsData(topicsData);
 
   // Print Summary
   console.log("\n==================================================");
