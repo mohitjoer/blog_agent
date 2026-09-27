@@ -1,0 +1,76 @@
+name: Automated Blog Publishing Workflow
+
+on:
+  schedule:
+    # Runs 2 days a week: Every Monday and Thursday at 13:00 UTC (18:30 IST)
+    - cron: '0 13 * * 1,4'
+  workflow_dispatch:
+    inputs:
+      custom_topic:
+        description: 'Optional custom topic / prompt for the blog post'
+        required: false
+        type: string
+        default: ''
+      dry_run:
+        description: 'Run in DRY RUN mode (no PR created, no DEV.to article published)'
+        required: false
+        type: boolean
+        default: false
+      publish_as_draft:
+        description: 'Publish on DEV.to as draft instead of live public'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish-blog:
+    name: Generate and Cross-Post Blog
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Blog Agent Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Blog Publishing Agent
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+          TARGET_REPO_PAT: ${{ secrets.TARGET_REPO_PAT }}
+          TARGET_REPO_OWNER: ${{ vars.TARGET_REPO_OWNER || secrets.TARGET_REPO_OWNER }}
+          TARGET_REPO_NAME: ${{ vars.TARGET_REPO_NAME || secrets.TARGET_REPO_NAME }}
+          TARGET_BLOG_DIR: ${{ vars.TARGET_BLOG_DIR || 'content/posts' }}
+          TARGET_FILE_EXT: ${{ vars.TARGET_FILE_EXT || 'mdx' }}
+          TARGET_BASE_BRANCH: ${{ vars.TARGET_BASE_BRANCH || 'main' }}
+          TARGET_SITE_URL: ${{ vars.TARGET_SITE_URL || secrets.TARGET_SITE_URL }}
+          BLOG_PATH_PREFIX: ${{ vars.BLOG_PATH_PREFIX || '/blog' }}
+          PUBLISH_METHOD: ${{ vars.PUBLISH_METHOD || 'playwright' }}
+          DEVTO_EMAIL: ${{ secrets.DEVTO_EMAIL }}
+          DEVTO_PASSWORD: ${{ secrets.DEVTO_PASSWORD }}
+          DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
+          DEVTO_PUBLISH_AS_DRAFT: ${{ inputs.publish_as_draft || vars.DEVTO_PUBLISH_AS_DRAFT || 'false' }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          CUSTOM_TOPIC: ${{ inputs.custom_topic || '' }}
+        run: npm start
+
+      - name: Commit Updated Topics Backlog
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/topics.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(backlog): update published blog topics history [skip ci]" && git push)

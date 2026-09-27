@@ -1,0 +1,38 @@
+{
+  "name": "blog-agent",
+  "version": "1.0.0",
+  "description": "Automated blog post generator and cross-poster for Next.js website and DEV.to with canonical URL",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "pr-only": "tsx src/index.ts --pr-only",
+    "dry-run": "tsx src/index.ts --dry-run",
+    "devto:login": "tsx src/login-helper.ts",
+    "build": "tsc",
+    "sync:sitemap": "tsx src/sync-sitemap.ts",
+    "test": "tsx test/index.test.ts"
+  },
+  "keywords": [
+    "blog",
+    "gemini",
+    "devto",
+    "github-actions",
+    "automation",
+    "canonical-url"
+  ],
+  "author": "Mohit Joe",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@octokit/rest": "^21.1.0",
+    "dotenv": "^16.4.7",
+    "playwright": "^1.63.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}
