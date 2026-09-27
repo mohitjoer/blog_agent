@@ -50,6 +50,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-2.5-flash' }}
+          TARGET_REPO_CONFIG: ${{ secrets.TARGET_REPO_CONFIG || vars.TARGET_REPO_CONFIG }}
           TARGET_REPO_PAT: ${{ secrets.TARGET_REPO_PAT }}
           TARGET_REPO_OWNER: ${{ vars.TARGET_REPO_OWNER || secrets.TARGET_REPO_OWNER }}
           TARGET_REPO_NAME: ${{ vars.TARGET_REPO_NAME || secrets.TARGET_REPO_NAME }}

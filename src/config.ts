@@ -45,18 +45,28 @@ export function loadConfig(overrides?: Partial<Config>): Config {
   const isDryRunArg = process.argv.includes("--dry-run");
   const isPrOnlyArg = process.argv.includes("--pr-only");
 
+  let repoJson: Record<string, any> = {};
+  const repoRaw = process.env.TARGET_REPO_CONFIG || process.env.TARGET_REPO;
+  if (repoRaw && repoRaw.trim()) {
+    try {
+      repoJson = JSON.parse(repoRaw.trim());
+    } catch (e) {
+      console.warn("⚠️ Failed to parse TARGET_REPO_CONFIG JSON variable:", e);
+    }
+  }
+
   const rawEnv = {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? "",
     GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-    TARGET_REPO_PAT: process.env.TARGET_REPO_PAT ?? "",
-    TARGET_REPO_OWNER: process.env.TARGET_REPO_OWNER ?? "",
-    TARGET_REPO_NAME: process.env.TARGET_REPO_NAME ?? "",
-    TARGET_BLOG_DIR: process.env.TARGET_BLOG_DIR || "content/posts",
-    TARGET_FILE_EXT: (process.env.TARGET_FILE_EXT as "mdx" | "md") || "mdx",
-    TARGET_BASE_BRANCH: process.env.TARGET_BASE_BRANCH || "main",
-    TARGET_BLOG_BRANCH: process.env.TARGET_BLOG_BRANCH || "blog_branch",
-    TARGET_SITE_URL: process.env.TARGET_SITE_URL ?? "",
-    BLOG_PATH_PREFIX: process.env.BLOG_PATH_PREFIX || "/blog",
+    TARGET_REPO_PAT: process.env.TARGET_REPO_PAT || repoJson.pat || repoJson.token || repoJson.TARGET_REPO_PAT || "",
+    TARGET_REPO_OWNER: process.env.TARGET_REPO_OWNER || repoJson.owner || repoJson.TARGET_REPO_OWNER || "",
+    TARGET_REPO_NAME: process.env.TARGET_REPO_NAME || repoJson.name || repoJson.repo || repoJson.TARGET_REPO_NAME || "",
+    TARGET_BLOG_DIR: process.env.TARGET_BLOG_DIR || repoJson.blogDir || repoJson.blog_dir || repoJson.dir || repoJson.TARGET_BLOG_DIR || "content/posts",
+    TARGET_FILE_EXT: ((process.env.TARGET_FILE_EXT || repoJson.fileExt || repoJson.file_ext || repoJson.ext || repoJson.TARGET_FILE_EXT || "mdx") as "mdx" | "md"),
+    TARGET_BASE_BRANCH: process.env.TARGET_BASE_BRANCH || repoJson.baseBranch || repoJson.base_branch || repoJson.base || repoJson.TARGET_BASE_BRANCH || "main",
+    TARGET_BLOG_BRANCH: process.env.TARGET_BLOG_BRANCH || repoJson.blogBranch || repoJson.blog_branch || repoJson.branch || repoJson.TARGET_BLOG_BRANCH || "blog_branch",
+    TARGET_SITE_URL: process.env.TARGET_SITE_URL || repoJson.siteUrl || repoJson.site_url || repoJson.TARGET_SITE_URL || "",
+    BLOG_PATH_PREFIX: process.env.BLOG_PATH_PREFIX || repoJson.blogPathPrefix || repoJson.blog_path_prefix || repoJson.BLOG_PATH_PREFIX || "/blog",
     PUBLISH_METHOD: (process.env.PUBLISH_METHOD as "playwright" | "api") || "playwright",
     DEVTO_API_KEY: process.env.DEVTO_API_KEY ?? "",
     DEVTO_EMAIL: process.env.DEVTO_EMAIL ?? "",

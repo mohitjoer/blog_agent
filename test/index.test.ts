@@ -15,6 +15,34 @@ async function runTests() {
   assert.ok(config.TARGET_SITE_URL, "TARGET_SITE_URL should have a value");
   console.log("   ✅ Config loaded successfully.\n");
 
+  // Test 1b: Single JSON variable parsing for TARGET_REPO_CONFIG
+  console.log("1b. Testing TARGET_REPO_CONFIG JSON parsing...");
+  const prevJsonEnv = process.env.TARGET_REPO_CONFIG;
+  process.env.TARGET_REPO_CONFIG = JSON.stringify({
+    pat: "ghp_json_test_token",
+    owner: "json-owner",
+    name: "json-repo",
+    blogDir: "posts/custom",
+    fileExt: "md",
+    baseBranch: "develop",
+    blogBranch: "custom-blog-branch",
+  });
+  // Clear any overriding env vars temporarily for the test
+  const prevPat = process.env.TARGET_REPO_PAT;
+  delete process.env.TARGET_REPO_PAT;
+  const jsonLoadedConfig = loadConfig({ DRY_RUN: true });
+  assert.strictEqual(jsonLoadedConfig.TARGET_REPO_PAT, "ghp_json_test_token");
+  assert.strictEqual(jsonLoadedConfig.TARGET_REPO_OWNER, "json-owner");
+  assert.strictEqual(jsonLoadedConfig.TARGET_REPO_NAME, "json-repo");
+  assert.strictEqual(jsonLoadedConfig.TARGET_BLOG_DIR, "posts/custom");
+  assert.strictEqual(jsonLoadedConfig.TARGET_FILE_EXT, "md");
+  assert.strictEqual(jsonLoadedConfig.TARGET_BASE_BRANCH, "develop");
+  assert.strictEqual(jsonLoadedConfig.TARGET_BLOG_BRANCH, "custom-blog-branch");
+  // Restore
+  if (prevJsonEnv) process.env.TARGET_REPO_CONFIG = prevJsonEnv; else delete process.env.TARGET_REPO_CONFIG;
+  if (prevPat) process.env.TARGET_REPO_PAT = prevPat;
+  console.log("   ✅ TARGET_REPO_CONFIG JSON parsing passed.\n");
+
   // Test 2: Article generation
   console.log("2. Testing article generator...");
   const article = await generateBlogPost(config, "TypeScript Clean Architecture");
